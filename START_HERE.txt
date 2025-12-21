@@ -1,0 +1,63 @@
+╔══════════════════════════════════════════════════════════════╗
+║                                                              ║
+║         POLYMARKET P&L CALCULATOR CHROME EXTENSION          ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+
+📊 This extension automatically calculates your total profit/loss
+   from your Polymarket betting history!
+
+
+🚀 QUICK START (3 steps):
+
+   1. Open Chrome and go to: chrome://extensions/
+   
+   2. Enable "Developer mode" (toggle in top-right)
+   
+   3. Click "Load unpacked" and select THIS folder
+
+
+📖 DETAILED INSTRUCTIONS:
+
+   → See INSTALLATION.md for step-by-step guide
+   → See README.md for full documentation
+
+
+✨ WHAT IT DOES:
+
+   ✓ Shows total profit/loss in the "Amount Won" column header
+   ✓ Counts your wins and losses (e.g., "13W / 2L")
+   ✓ Updates automatically as you load more betting history
+   ✓ Seamlessly integrates with Polymarket's design
+   ✓ 100% private - no data sent anywhere
+
+
+📁 FILES IN THIS FOLDER:
+
+   manifest.json      - Extension configuration
+   content.js         - Main calculation logic
+   styles.css         - Widget styling
+   
+   INSTALLATION.md    - Quick installation guide
+   README.md          - Full documentation
+   START_HERE.txt     - This file!
+   
+   create-icons.html  - Optional: Generate icons in browser
+   generate-icons.js  - Optional: Generate icons with Node.js
+
+
+❓ NEED HELP?
+
+   • Widget not showing? → Check INSTALLATION.md troubleshooting
+   • Want to customize? → Edit styles.css or content.js
+   • Found a bug? → Check the console (F12) for errors
+
+
+💡 TIP: Once installed, visit polymarket.com and go to your
+        betting history. Look for the total in the Amount Won header!
+
+
+═══════════════════════════════════════════════════════════════
+
+Ready to track your Polymarket performance? Install now! 🎯
+

@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Polymarket P&L Calculator",
+  "version": "1.0.0",
+  "description": "Calculate and display total profit/loss from Polymarket betting history",
+  "permissions": [],
+  "content_scripts": [
+    {
+      "matches": ["https://polymarket.com/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_end"
+    }
+  ]
+}
+
