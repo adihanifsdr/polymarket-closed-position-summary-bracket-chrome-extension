@@ -2,6 +2,8 @@
 
 A Chrome extension that automatically calculates and displays your total profit/loss from your Polymarket betting history.
 
+![Demo](images/demo.jpg)
+
 ## Features
 
 - 📊 **Real-time P&L Calculation**: Automatically sums all your wins and losses
