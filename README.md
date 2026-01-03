@@ -14,30 +14,11 @@ A Chrome extension that automatically calculates and displays your total profit/
 
 ## Installation
 
-### Method 1: Load Unpacked Extension (Development)
-
 1. Open Chrome and navigate to `chrome://extensions/`
 2. Enable **Developer mode** (toggle in the top right corner)
 3. Click **Load unpacked**
 4. Select the `chrome-extension` folder from this project
 5. The extension is now installed!
-
-### Method 2: Create Icon Files (Optional)
-
-The extension requires icon files. You can create simple icons or use placeholders:
-
-#### Quick Method - Create Basic Icons:
-
-Run these commands in the `chrome-extension` folder to create basic colored square icons:
-
-```bash
-# For macOS/Linux:
-convert -size 16x16 xc:#10b981 icon16.png
-convert -size 48x48 xc:#10b981 icon48.png
-convert -size 128x128 xc:#10b981 icon128.png
-
-# Or create them with any image editor as solid green squares
-```
 
 ## Usage
 
@@ -63,8 +44,10 @@ chrome-extension/
 ├── manifest.json       # Extension configuration
 ├── content.js          # Main logic for parsing and calculation
 ├── styles.css          # Widget styling
-├── README.md          # This file
-└── icon*.png          # Extension icons (need to be created)
+└── README.md          # This file
+images/
+├── icon.png           # Extension icon (PNG)
+└── icon.ico           # Extension icon (ICO)
 ```
 
 ## Troubleshooting
@@ -78,11 +61,6 @@ chrome-extension/
 - The extension reads values as they appear on the page
 - If Polymarket changes their HTML structure, the extension may need updates
 - Try clicking "Load more" to ensure all bets are loaded
-
-### Icons Missing Error
-If you see an icon error, either:
-1. Create simple PNG icons (16x16, 48x48, 128x128 pixels)
-2. Or remove the "icons" section from `manifest.json` temporarily
 
 ## Development
 
