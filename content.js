@@ -10,6 +10,107 @@ function log(...args) {
 
 log('Extension loaded - Streak Version with Caching');
 
+// Trading Session Detection
+// Sessions based on ET timezone converted to WIB:
+// - NewYork: 7:00 AM - 3:00 PM ET (19:00 - 03:00 WIB)
+// - LowLiquidity: 3:00 PM - 7:00 PM ET (03:00 - 07:00 WIB)
+// - Asia: 7:00 PM - 3:00 AM ET (07:00 - 15:00 WIB)
+// - London: 3:00 AM - 7:00 AM ET (15:00 - 19:00 WIB)
+
+const SESSION_COLORS = {
+  NewYork: { bg: '#dcfce7', text: '#166534', border: '#22c55e' },       // Green
+  LowLiquidity: { bg: '#f3e8ff', text: '#7c3aed', border: '#a855f7' },  // Purple
+  Asia: { bg: '#fef3c7', text: '#92400e', border: '#f59e0b' },          // Amber/Yellow
+  London: { bg: '#dbeafe', text: '#1e40af', border: '#3b82f6' }         // Blue
+};
+
+/**
+ * Extract the round start time from market title
+ * Example: "Bitcoin Up or Down - January 7, 6:00PM-6:15PM ET" -> { hour: 18, minute: 0 }
+ */
+function extractRoundTimeET(title) {
+  // Match patterns like "6:00PM", "12:30AM", "10:15PM"
+  const timeMatch = title.match(/(\d{1,2}):(\d{2})(AM|PM)-/i);
+  if (!timeMatch) {
+    return null;
+  }
+
+  let hour = parseInt(timeMatch[1], 10);
+  const minute = parseInt(timeMatch[2], 10);
+  const period = timeMatch[3].toUpperCase();
+
+  // Convert to 24-hour format
+  if (period === 'PM' && hour !== 12) {
+    hour += 12;
+  } else if (period === 'AM' && hour === 12) {
+    hour = 0;
+  }
+
+  return { hour, minute };
+}
+
+/**
+ * Determine trading session from market title time (ET timezone)
+ * Returns: 'NewYork' | 'LowLiquidity' | 'Asia' | 'London' | null
+ */
+function getTradingSessionFromTitle(title) {
+  const roundTime = extractRoundTimeET(title);
+  if (!roundTime) {
+    return null;
+  }
+
+  const etHour = roundTime.hour;
+
+  // Convert ET hour to WIB hour (add 12 hours, handle overflow)
+  const wibHour = (etHour + 12) % 24;
+
+  // NewYork session: 19:00-03:00 WIB = 7:00 AM - 3:00 PM ET
+  if (wibHour >= 19 || wibHour < 3) {
+    return 'NewYork';
+  }
+
+  // LowLiquidity session: 03:00-07:00 WIB = 3:00 PM - 7:00 PM ET
+  if (wibHour >= 3 && wibHour < 7) {
+    return 'LowLiquidity';
+  }
+
+  // Asia session: 07:00-15:00 WIB = 7:00 PM - 3:00 AM ET
+  if (wibHour >= 7 && wibHour < 15) {
+    return 'Asia';
+  }
+
+  // London session: 15:00-19:00 WIB = 3:00 AM - 7:00 AM ET
+  return 'London';
+}
+
+/**
+ * Get trading session for a market title
+ */
+function getTradingSession(title) {
+  if (!title) return null;
+  return getTradingSessionFromTitle(title);
+}
+
+/**
+ * Extract market title from a row element
+ */
+function getMarketTitleFromRow(row) {
+  // Try to find the title element - adjust selector based on actual DOM structure
+  const titleElement = row.querySelector('a[href*="/event/"] span, [class*="title"], .font-medium');
+  if (titleElement) {
+    return titleElement.textContent.trim();
+  }
+
+  // Fallback: look for any text containing time pattern
+  const allText = row.textContent || '';
+  const timeMatch = allText.match(/([A-Za-z]+\s+\d{1,2},?\s+\d{1,2}:\d{2}(?:AM|PM)[^E]*ET)/i);
+  if (timeMatch) {
+    return timeMatch[0];
+  }
+
+  return null;
+}
+
 // Cache management
 const CACHE_KEY_PREFIX = 'polymarket_pl_cache_';
 let plCache = {}; // { index: value }
@@ -139,6 +240,76 @@ function updateCache() {
   return rows;
 }
 
+/**
+ * Add trading session badge to a row
+ */
+function addSessionBadge(row) {
+  // Check if badge already exists
+  if (row.querySelector('.session-badge')) {
+    return;
+  }
+
+  const title = getMarketTitleFromRow(row);
+  const session = getTradingSession(title);
+
+  if (!session) {
+    log('Could not determine session for row:', title?.substring(0, 50));
+    return;
+  }
+
+  const colors = SESSION_COLORS[session];
+
+  // Create badge container
+  const badgeContainer = document.createElement('div');
+  badgeContainer.className = 'session-badge-container';
+  badgeContainer.style.cssText = `
+    position: absolute;
+    left: -60px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 15;
+  `;
+
+  // Create badge
+  const badge = document.createElement('div');
+  badge.className = 'session-badge';
+  badge.textContent = session === 'NewYork' ? 'NY' : session === 'LowLiquidity' ? 'LL' : session.substring(0, 2).toUpperCase();
+  badge.title = `${session} Session`;
+  badge.style.cssText = `
+    background: ${colors.bg};
+    color: ${colors.text};
+    border: 1px solid ${colors.border};
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: bold;
+    white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  `;
+
+  badgeContainer.appendChild(badge);
+
+  // Ensure row has relative positioning
+  const currentPosition = window.getComputedStyle(row).position;
+  if (currentPosition === 'static') {
+    row.style.position = 'relative';
+  }
+
+  row.appendChild(badgeContainer);
+}
+
+/**
+ * Update session badges on all visible rows
+ */
+function updateSessionBadges(rows) {
+  // Clear existing badges (since rows recycle in virtual list)
+  document.querySelectorAll('.session-badge-container').forEach(el => el.remove());
+
+  rows.forEach(row => {
+    addSessionBadge(row);
+  });
+}
+
 // Function to visualize streaks using cached data
 function updateStreakVisuals() {
   const rows = updateCache(); // Update cache first and get visible rows
@@ -146,6 +317,9 @@ function updateStreakVisuals() {
 
   // Clear existing indicators
   document.querySelectorAll('.streak-connector, .streak-label-container').forEach(el => el.remove());
+
+  // Add session badges to visible rows
+  updateSessionBadges(rows);
 
   // Get all cached indices sorted numerically (chronological order)
   const cachedIndices = Object.keys(plCache)
@@ -382,6 +556,25 @@ window.polymarketPL = {
   refreshStreaks: () => {
     updateStreakVisuals();
     console.log('Streaks refreshed');
+  },
+  // Test session detection with a title
+  testSession: (title) => {
+    const session = getTradingSession(title);
+    console.log(`Title: "${title}"`);
+    console.log(`Session: ${session || 'Unknown'}`);
+    return session;
+  },
+  // View sessions for all visible rows
+  viewSessions: () => {
+    const rows = Array.from(document.querySelectorAll('[data-item-index]'));
+    const sessions = rows.map(row => {
+      const index = row.getAttribute('data-item-index');
+      const title = getMarketTitleFromRow(row);
+      const session = getTradingSession(title);
+      return { index, title: title?.substring(0, 60), session };
+    });
+    console.table(sessions);
+    return sessions;
   }
 };
 
@@ -391,3 +584,5 @@ log('  - window.polymarketPL.clearAllCaches() - Clear all caches');
 log('  - window.polymarketPL.viewCache() - View current cache');
 log('  - window.polymarketPL.viewAllCaches() - View all cached addresses');
 log('  - window.polymarketPL.refreshStreaks() - Refresh streak visuals');
+log('  - window.polymarketPL.testSession(title) - Test session detection');
+log('  - window.polymarketPL.viewSessions() - View sessions for visible rows');
