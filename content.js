@@ -265,7 +265,7 @@ function addSessionBadge(row) {
   const flagCodes = {
     NewYork: 'us',
     London: 'gb',
-    Asia: 'id',
+    Asia: 'cn',
     LowLiquidity: 'xx'  // White flag (unknown/neutral)
   };
 
