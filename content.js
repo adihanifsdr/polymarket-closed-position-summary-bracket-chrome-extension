@@ -10,19 +10,23 @@ function log(...args) {
 
 log('Extension loaded - Streak Version with Caching');
 
+// Inject flag-icons CSS for country flags
+(function injectFlagIcons() {
+  if (!document.querySelector('link[href*="flag-icons"]')) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.0.0/css/flag-icons.min.css';
+    document.head.appendChild(link);
+    log('Flag icons CSS injected');
+  }
+})();
+
 // Trading Session Detection
 // Sessions based on ET timezone converted to WIB:
 // - NewYork: 7:00 AM - 3:00 PM ET (19:00 - 03:00 WIB)
 // - LowLiquidity: 3:00 PM - 7:00 PM ET (03:00 - 07:00 WIB)
 // - Asia: 7:00 PM - 3:00 AM ET (07:00 - 15:00 WIB)
 // - London: 3:00 AM - 7:00 AM ET (15:00 - 19:00 WIB)
-
-const SESSION_COLORS = {
-  NewYork: { bg: '#dcfce7', text: '#166534', border: '#22c55e' },       // Green
-  LowLiquidity: { bg: '#f3e8ff', text: '#7c3aed', border: '#a855f7' },  // Purple
-  Asia: { bg: '#fef3c7', text: '#92400e', border: '#f59e0b' },          // Amber/Yellow
-  London: { bg: '#dbeafe', text: '#1e40af', border: '#3b82f6' }         // Blue
-};
 
 /**
  * Extract the round start time from market title
@@ -257,37 +261,26 @@ function addSessionBadge(row) {
     return;
   }
 
-  const colors = SESSION_COLORS[session];
+  // Flag codes for each session
+  const flagCodes = {
+    NewYork: 'us',
+    London: 'gb',
+    Asia: 'id',
+    LowLiquidity: 'xx'  // White flag (unknown/neutral)
+  };
 
-  // Create badge container
-  const badgeContainer = document.createElement('div');
-  badgeContainer.className = 'session-badge-container';
-  badgeContainer.style.cssText = `
+  // Create flag element directly
+  const flag = document.createElement('span');
+  flag.className = `session-badge fi fi-${flagCodes[session]}`;
+  flag.title = `${session} Session`;
+  flag.style.cssText = `
     position: absolute;
-    left: -60px;
+    left: -30px;
     top: 50%;
     transform: translateY(-50%);
     z-index: 15;
+    font-size: 20px;
   `;
-
-  // Create badge
-  const badge = document.createElement('div');
-  badge.className = 'session-badge';
-  badge.textContent = session === 'NewYork' ? 'NY' : session === 'LowLiquidity' ? 'LL' : session.substring(0, 2).toUpperCase();
-  badge.title = `${session} Session`;
-  badge.style.cssText = `
-    background: ${colors.bg};
-    color: ${colors.text};
-    border: 1px solid ${colors.border};
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 10px;
-    font-weight: bold;
-    white-space: nowrap;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-  `;
-
-  badgeContainer.appendChild(badge);
 
   // Ensure row has relative positioning
   const currentPosition = window.getComputedStyle(row).position;
@@ -295,7 +288,7 @@ function addSessionBadge(row) {
     row.style.position = 'relative';
   }
 
-  row.appendChild(badgeContainer);
+  row.appendChild(flag);
 }
 
 /**
@@ -303,7 +296,7 @@ function addSessionBadge(row) {
  */
 function updateSessionBadges(rows) {
   // Clear existing badges (since rows recycle in virtual list)
-  document.querySelectorAll('.session-badge-container').forEach(el => el.remove());
+  document.querySelectorAll('.session-badge').forEach(el => el.remove());
 
   rows.forEach(row => {
     addSessionBadge(row);
